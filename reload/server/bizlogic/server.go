@@ -2,36 +2,34 @@ package bizlogic
 
 import (
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"os"
-	"path/filepath"
-
 	"github.com/gin-gonic/gin"
 	"github.com/pingcap/monitoring/reload/server/types"
 	"github.com/pingcap/monitoring/reload/server/utils"
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/log"
 	"github.com/prometheus/prometheus/pkg/rulefmt"
-	"github.com/youthlin/stream"
-	streamtypes "github.com/youthlin/stream/types"
+	"github.com/wushilin/stream"
 	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"os"
+	"path/filepath"
 )
 
 type server struct {
-	url                      *url.URL
-	dir                      string
-	storePath                string
+	url *url.URL
+	dir string
+	storePath string
 	needStoreFileToStorePath bool
 }
 
 func NewServer(promURL *url.URL, watchDir string, needStoreFileToStorePath bool, storePath string) *server {
 	return &server{
-		url:                      promURL,
-		dir:                      watchDir,
+		url: promURL,
+		dir: watchDir,
 		needStoreFileToStorePath: needStoreFileToStorePath,
-		storePath:                storePath,
+		storePath: storePath,
 	}
 }
 
@@ -82,18 +80,16 @@ func (s *server) ListRules(c *gin.Context) {
 	}
 }
 
-func (s *server) getConfigs() ([]string, error) {
+func (s *server) getConfigs()([]string, error) {
 	files, err := ioutil.ReadDir(s.dir)
 	if err != nil {
 		return nil, errors.Wrap(err, "get config list failed")
 	}
 
 	r := make([]string, 0)
-	stream.OfSlice(files).Filter(func(t streamtypes.T) bool {
-		info := t.(os.FileInfo)
+	stream.FromArray(files).Filter(func(info os.FileInfo) bool {
 		return !info.IsDir() && filepath.Ext(info.Name()) == ".yml"
-	}).ForEach(func(t streamtypes.T) {
-		info := t.(os.FileInfo)
+	}).Each(func(info os.FileInfo) {
 		r = append(r, info.Name())
 	})
 	return r, nil
@@ -105,7 +101,7 @@ func (s *server) UpdateConfig(c *gin.Context) {
 	files, err := ioutil.ReadDir(s.dir)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, utils.NewErrorResponse(err.Error()))
-	} else {
+	}  else {
 		config := &types.Config{}
 		if err := c.ShouldBindJSON(config); err != nil {
 			fmt.Println(err)
@@ -114,32 +110,28 @@ func (s *server) UpdateConfig(c *gin.Context) {
 			return
 		}
 
-		stream.OfSlice(files).Filter(func(t streamtypes.T) bool {
-			info := t.(os.FileInfo)
+		stream.FromArray(files).Filter(func(info os.FileInfo) bool {
 			return info.Name() == configName
-		}).Map(func(t streamtypes.T) streamtypes.R {
+		}).Map(func(info os.FileInfo) []byte {
 			return []byte(config.Data)
-		}).Filter(func(t streamtypes.T) bool {
-			data := t.([]byte)
+		}).Filter(func (data []byte) bool {
 			if err := parse(data); err != nil {
 				c.JSON(http.StatusBadRequest, utils.NewErrorResponse(err.Error()))
 				return false
 			}
 			return true
-		}).Peek(func(t streamtypes.T) {
-			data := t.([]byte)
+		}).Peek(func (data []byte) {
 			if err := ioutil.WriteFile(fmt.Sprintf("%s%c%s", s.dir, filepath.Separator, configName), data, os.ModePerm); err != nil {
 				c.JSON(http.StatusBadRequest, utils.NewErrorResponse(err.Error()))
 			} else {
 				c.JSON(http.StatusOK, config)
 			}
-		}).Filter(func(t streamtypes.T) bool {
+		}).Filter(func (data []byte) bool{
 			if !s.needStoreFileToStorePath {
 				log.Info("do not need to store file to storepath")
 			}
 			return s.needStoreFileToStorePath
-		}).ForEach(func(t streamtypes.T) {
-			data := t.([]byte)
+		}).Each(func (data []byte) {
 			if err := ioutil.WriteFile(fmt.Sprintf("%s%c%s", s.storePath, filepath.Separator, configName), data, os.ModePerm); err != nil {
 				log.Error("write file to store path failed", err)
 			}
@@ -159,8 +151,7 @@ func parse(content []byte) error {
 	}
 
 	var errStr string
-	stream.OfSlice(errs).ForEach(func(t streamtypes.T) {
-		err := t.(error)
+	stream.FromArray(errs).Each(func (err error) {
 		errStr += err.Error()
 	})
 

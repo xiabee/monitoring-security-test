@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 
@@ -29,8 +30,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
-	"github.com/youthlin/stream"
-	streamtypes "github.com/youthlin/stream/types"
+	"github.com/wushilin/stream"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -118,33 +118,25 @@ func exportMonitorData() {
 	monitorDir := fmt.Sprintf("%s%cmonitor", baseDir, filepath.Separator)
 	checkErr(os.RemoveAll(monitorDir), "delete path filed")
 
-	stream.OfSlice(refs).Filter(func(t streamtypes.T) bool {
-		ref := t.(*plumbing.Reference)
+	stream.FromArray(refs).Filter(func(ref *plumbing.Reference) bool {
 		return ref.Name().IsTag()
-	}).Map(func(t streamtypes.T) streamtypes.R {
-		ref := t.(*plumbing.Reference)
+	}).Map(func(ref *plumbing.Reference) string {
 		return ref.Name().Short()
-	}).Filter(func(t streamtypes.T) bool {
-		tag := t.(string)
+	}).Filter(func(tag string) bool {
 		return compareVersion(tag)
-	}).Map(func(t streamtypes.T) streamtypes.R {
-		tag := t.(string)
+	}).Map(func(tag string) string {
 		dir := fmt.Sprintf("%s%c%s", monitorDir, filepath.Separator, tag)
 		fmt.Println("tagpath=" + tag)
 
 		fetchDashboard(tag, dir)
 		fetchRules(tag, dir)
 		return dir
-	}).Peek(func(t streamtypes.T) {
-		dir := t.(string)
+	}).Peek(func(dir string) {
 		// copy local files
-		stream.OfMap(localFiles).ForEach(func(t streamtypes.T) {
-			pair := t.(streamtypes.Pair)
-			key, val := pair.First.(string), pair.Second.(string)
-			copyLocalfiles(baseDir, dir, key, val)
+		stream.FromMapEntries(localFiles).Each(func(entry stream.MapEntry) {
+			copyLocalfiles(baseDir, dir, entry.Key.(reflect.Value).String(), entry.Value.(string))
 		})
-	}).ForEach(func(t streamtypes.T) {
-		dir := t.(string)
+	}).Each(func(dir string) {
 		// check dir files
 		count := 0
 		filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
@@ -165,13 +157,10 @@ func fetchDashboard(tag string, baseDir string) {
 	dir := fmt.Sprintf("%s%cdashboards", baseDir, filepath.Separator)
 	checkErr(os.MkdirAll(dir, os.ModePerm), "create dir failed, path="+dir)
 
-	stream.OfMap(dashboards).ForEach(func(t streamtypes.T) {
-		pair := t.(streamtypes.Pair)
-		key, val := pair.First.(string), pair.Second.(string)
-
-		dashboard := key
+	stream.FromMapEntries(dashboards).Each(func(entry stream.MapEntry) {
+		dashboard := entry.Key.(reflect.Value).String()
 		body := fetchContent(fmt.Sprintf("%s/%s/scripts/%s", repository_url, tag, dashboard), tag, dashboard)
-		writeFile(dir, convertDashboardFileName(dashboard), filterDashboard(body, dashboard, val))
+		writeFile(dir, convertDashboardFileName(dashboard), filterDashboard(body, dashboard, entry.Value.(string)))
 	})
 }
 
@@ -189,8 +178,7 @@ func fetchRules(tag string, baseDir string) {
 	dir := fmt.Sprintf("%s%crules", baseDir, filepath.Separator)
 	checkErr(os.MkdirAll(dir, os.ModePerm), "create dir failed, path="+dir)
 
-	stream.OfSlice(rules).ForEach(func(t streamtypes.T) {
-		rule := t.(string)
+	stream.FromArray(rules).Each(func(rule string) {
 		body := fetchContent(fmt.Sprintf("%s/%s/roles/prometheus/files/%s", repository_url, tag, rule), tag, rule)
 		if body == "" {
 			return
@@ -243,40 +231,29 @@ func writeFile(baseDir string, fileName string, body string) {
 
 func filterDashboard(body string, dashboard string, title string) string {
 	newStr := ""
-	stream.Of(body).Filter(func(t streamtypes.T) bool {
-		str := t.(string)
-
+	stream.Of(body).Filter(func(str string) bool {
 		return str != ""
-	}).Map(func(t streamtypes.T) streamtypes.R {
-		str := t.(string)
-
+	}).Map(func(str string) string {
 		if dashboard != "overview.json" {
 			return str
 		}
 
-		stream.OfSlice(overviewExlcudeItems).ForEach(func(t streamtypes.T) {
-			item := t.(string)
+		stream.FromArray(overviewExlcudeItems).Each(func(item string) {
 			str = deleteOverviewItemFromDashboard(str, item)
 		})
 
 		return str
-	}).Map(func(t streamtypes.T) streamtypes.R {
-		str := t.(string)
-
+	}).Map(func(str string) string {
 		if !strings.Contains(dashboard, "tikv") {
 			return str
 		}
 
-		stream.OfSlice(tikvExcludeItems).ForEach(func(t streamtypes.T) {
-			item := t.(string)
-
+		stream.FromArray(tikvExcludeItems).Each(func(item string) {
 			str = deleteTiKVItemFromDashboard(str, item)
 		})
 
 		return str
-	}).Map(func(t streamtypes.T) streamtypes.R {
-		str := t.(string)
-
+	}).Map(func(str string) string {
 		// replace grafana item
 		r := gjson.Get(str, "__requires.0.type")
 		if r.Exists() && r.Str == "grafana" {
@@ -286,9 +263,7 @@ func filterDashboard(body string, dashboard string, title string) string {
 		}
 
 		return str
-	}).Map(func(t streamtypes.T) streamtypes.R {
-		str := t.(string)
-
+	}).Map(func(str string) string {
 		// replace links item
 		if gjson.Get(str, "links").Exists() {
 			newStr, err := sjson.Set(str, "links", []struct{}{})
@@ -297,18 +272,14 @@ func filterDashboard(body string, dashboard string, title string) string {
 		}
 
 		return str
-	}).Map(func(t streamtypes.T) streamtypes.R {
-		str := t.(string)
-
+	}).Map(func(str string) string {
 		// replace datasource name
 		if gjson.Get(str, "__inputs").Exists() && gjson.Get(str, "__inputs.0.name").Exists() {
 			datasource := gjson.Get(str, "__inputs.0.name").Str
 			return strings.ReplaceAll(str, fmt.Sprintf("${%s}", datasource), datasource_name)
 		}
 		return str
-	}).Map(func(t streamtypes.T) streamtypes.R {
-		str := t.(string)
-
+	}).Map(func(str string) string {
 		// delete input defination
 		if gjson.Get(str, "__inputs").Exists() {
 			newStr, err := sjson.Delete(str, "__inputs")
@@ -317,16 +288,12 @@ func filterDashboard(body string, dashboard string, title string) string {
 		}
 
 		return str
-	}).Map(func(t streamtypes.T) streamtypes.R {
-		str := t.(string)
-
+	}).Map(func(str string) string {
 		// unify the title name
 		newStr, err := sjson.Set(str, "title", title)
 		checkErr(err, "replace title failed")
 		return newStr
-	}).ForEach(func(t streamtypes.T) {
-		str := t.(string)
-
+	}).Each(func(str string) {
 		newStr = str
 	})
 
@@ -427,12 +394,10 @@ func replaceAlertExpr(content []byte) ([]byte, error) {
 		newG := rulefmt.RuleGroup{
 			Interval: group.Interval,
 			Name:     group.Name,
-			Rules:    make([]rulefmt.Rule, 0, len(group.Rules)),
+			Rules:    make([]rulefmt.Rule, len(group.Rules)),
 		}
 
-		stream.OfSlice(group.Rules).Map(func(t streamtypes.T) streamtypes.R {
-			rule := t.(rulefmt.Rule)
-
+		stream.FromArray(group.Rules).Map(func(rule rulefmt.Rule) rulefmt.Rule {
 			if time.Duration(rule.For) <= (time.Second * 60) {
 				rule.For = forConfig
 			}
@@ -448,10 +413,7 @@ func replaceAlertExpr(content []byte) ([]byte, error) {
 			}
 
 			return rule
-		}).ForEach(func(t streamtypes.T) {
-			rule := t.(rulefmt.Rule)
-			newG.Rules = append(newG.Rules, rule)
-		})
+		}).CollectTo(newG.Rules)
 
 		newGS.Groups = append(newGS.Groups, newG)
 	}

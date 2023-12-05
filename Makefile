@@ -2,8 +2,6 @@ ARCH      := "`uname -s`"
 LINUX     := "linux"
 MAC       := "Darwin"
 
-export CGO_ENABLED = 0
-
 all:
 	@if [ $(ARCH) = $(LINUX) ]; \
 	then \

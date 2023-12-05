@@ -8,8 +8,7 @@ import (
 	"github.com/pingcap/monitoring/pkg/common"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
-	"github.com/youthlin/stream"
-	streamtypes "github.com/youthlin/stream/types"
+	"github.com/wushilin/stream"
 )
 
 const (
@@ -21,26 +20,20 @@ var (
 	tikvExcludeItems     = []string{"IO utilization"}
 
 	dashboards = map[string]string{
-		"binlog.json":                  "Test-Cluster-Binlog",
-		"tidb.json":                    "Test-Cluster-TiDB",
-		"tidb_resource_control.json":   "Test-Cluster-TiDB-Resource-Control",
-		"tidb_runtime.json":            "Test-Cluster-TiDB-Runtime",
-		"overview.json":                "Test-Cluster-Overview",
-		"performance_overview.json":    "Test-Cluster-Performance-Overview",
-		"tikv_details.json":            "Test-Cluster-TiKV-Details",
-		"tikv_summary.json":            "Test-Cluster-TiKV-Summary",
-		"tikv_trouble_shooting.json":   "Test-Cluster-TiKV-Trouble-Shooting",
-		"pd.json":                      "Test-Cluster-PD",
-		"tikv_pull.json":               "Test-Cluster-TiKV",
-		"overview_pull.json":           "Test-Cluster-Overview",
-		"lightning.json":               "Test-Cluster-Lightning",
-		"tiflash_summary.json":         "Test-Cluster-TiFlash-Summary",
-		"tiflash_proxy_summary.json":   "Test-Cluster-TiFlash-Proxy-Summary",
-		"ticdc.json":                   "Test-Cluster-TiCDC",
-		"tikv-cdc.json":                "Test-Cluster-TiKV-CDC",
-		"tiflash_proxy_details.json":   "Test-Cluster-TiFlash-Proxy-Details",
-		"DM-Monitor-Standard.json":     "Test-Cluster-DM-Standard",
-		"DM-Monitor-Professional.json": "Test-Cluster-DM-Professional",
+		"binlog.json":                "Test-Cluster-Binlog",
+		"tidb.json":                  "Test-Cluster-TiDB",
+		"overview.json":              "Test-Cluster-Overview",
+		"tikv_details.json":          "Test-Cluster-TiKV-Details",
+		"tikv_summary.json":          "Test-Cluster-TiKV-Summary",
+		"tikv_trouble_shooting.json": "Test-Cluster-TiKV-Trouble-Shooting",
+		"pd.json":                    "Test-Cluster-PD",
+		"tikv_pull.json":             "Test-Cluster-TiKV",
+		"overview_pull.json":         "Test-Cluster-Overview",
+		"lightning.json":             "Test-Cluster-Lightning",
+		"tiflash_summary.json":       "Test-Cluster-TiFlash-Summary",
+		"tiflash_proxy_summary.json": "Test-Cluster-TiFlash-Proxy-Summary",
+		"ticdc.json":                 "Test-Cluster-TiCDC",
+		"tiflash_proxy_details.json": "Test-Cluster-TiFlash-Proxy-Details",
 	}
 )
 
@@ -65,35 +58,29 @@ func convertDashboardFileName(dashboard string) string {
 
 func filterDashboard(body string, dashboard string, title string) string {
 	newStr := ""
-	stream.Of(body).Filter(func(t streamtypes.T) bool {
-		str := t.(string)
+	stream.Of(body).Filter(func(str string) bool {
 		return str != ""
-	}).Map(func(t streamtypes.T) streamtypes.R {
-		str := t.(string)
+	}).Map(func(str string) string {
 		if dashboard != "overview.json" {
 			return str
 		}
 
-		stream.OfSlice(overviewExlcudeItems).ForEach(func(t streamtypes.T) {
-			item := t.(string)
+		stream.FromArray(overviewExlcudeItems).Each(func(item string) {
 			str = deleteOverviewItemFromDashboard(str, item)
 		})
 
 		return str
-	}).Map(func(t streamtypes.T) streamtypes.R {
-		str := t.(string)
+	}).Map(func(str string) string {
 		if !strings.Contains(dashboard, "tikv") {
 			return str
 		}
 
-		stream.OfSlice(tikvExcludeItems).ForEach(func(t streamtypes.T) {
-			item := t.(string)
+		stream.FromArray(tikvExcludeItems).Each(func(item string) {
 			str = deleteTiKVItemFromDashboard(str, item)
 		})
 
 		return str
-	}).Map(func(t streamtypes.T) streamtypes.R {
-		str := t.(string)
+	}).Map(func(str string) string {
 		// replace grafana item
 		r := gjson.Get(str, "__requires.0.type")
 		if r.Exists() && r.Str == "grafana" {
@@ -103,8 +90,7 @@ func filterDashboard(body string, dashboard string, title string) string {
 		}
 
 		return str
-	}).Map(func(t streamtypes.T) streamtypes.R {
-		str := t.(string)
+	}).Map(func(str string) string {
 		// replace links item
 		if gjson.Get(str, "links").Exists() {
 			newStr, err := sjson.Set(str, "links", []struct{}{})
@@ -113,16 +99,14 @@ func filterDashboard(body string, dashboard string, title string) string {
 		}
 
 		return str
-	}).Map(func(t streamtypes.T) streamtypes.R {
-		str := t.(string)
+	}).Map(func(str string) string {
 		// replace datasource name
 		if gjson.Get(str, "__inputs").Exists() && gjson.Get(str, "__inputs.0.name").Exists() {
 			datasource := gjson.Get(str, "__inputs.0.name").Str
 			return strings.ReplaceAll(str, fmt.Sprintf("${%s}", datasource), datasource_name)
 		}
 		return str
-	}).Map(func(t streamtypes.T) streamtypes.R {
-		str := t.(string)
+	}).Map(func(str string) string {
 		// delete input defination
 		if gjson.Get(str, "__inputs").Exists() {
 			newStr, err := sjson.Delete(str, "__inputs")
@@ -131,14 +115,12 @@ func filterDashboard(body string, dashboard string, title string) string {
 		}
 
 		return str
-	}).Map(func(t streamtypes.T) streamtypes.R {
-		str := t.(string)
+	}).Map(func(str string) string {
 		// unify the title name
 		newStr, err := sjson.Set(str, "title", title)
 		common.CheckErr(err, "replace title failed")
 		return newStr
-	}).ForEach(func(t streamtypes.T) {
-		str := t.(string)
+	}).Each(func(str string) {
 		newStr = str
 	})
 
