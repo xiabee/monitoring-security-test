@@ -2,6 +2,9 @@ ARCH      := "`uname -s`"
 LINUX     := "linux"
 MAC       := "Darwin"
 
+TARGET_OS ?= $(shell go env GOOS)
+TARGET_ARCH ?= $(shell go env GOARCH)
+
 export CGO_ENABLED = 0
 
 all:
@@ -18,3 +21,12 @@ all:
 	fi
 	GOOS=linux go build -o ./reload/build/linux/reload  ./reload/main.go; \
     GOOS=darwin go build -o ./reload/build/macos/reload  ./reload/main.go; \
+
+pull-monitoring:
+	go build -o pull-monitoring cmd/monitoring.go
+
+output/dashboards: pull-monitoring
+	bash scripts/prepare_dashboards.sh
+
+output/grafana-$(TARGET_OS)-$(TARGET_ARCH).tar.gz : output/dashboards
+	TARGET_OS=$(TARGET_OS) TARGET_ARCH=$(TARGET_ARCH) bash scripts/build_tiup_grafana.sh
