@@ -1433,7 +1433,7 @@
               "refId": "A",
               "step": 10
             },
-			{
+			      {
               "expr": "histogram_quantile(0.9999, sum(rate(go_sched_latencies_seconds_bucket{k8s_cluster=\"$k8s_cluster\",tidb_cluster=\"$tidb_cluster\", instance=~\"$instance\"}[30s])) by (le, instance))",
               "format": "time_series",
               "intervalFactor": 1,
@@ -1441,7 +1441,7 @@
               "refId": "B",
               "step": 10
             },
-			{
+			      {
               "expr": "histogram_quantile(0.99999, sum(rate(go_sched_latencies_seconds_bucket{k8s_cluster=\"$k8s_cluster\",tidb_cluster=\"$tidb_cluster\", instance=~\"$instance\"}[30s])) by (le, instance))",
               "format": "time_series",
               "intervalFactor": 1,
@@ -1449,7 +1449,7 @@
               "refId": "C",
               "step": 10
             },
-			{
+			      {
               "expr": "histogram_quantile(0.999999, sum(rate(go_sched_latencies_seconds_bucket{k8s_cluster=\"$k8s_cluster\",tidb_cluster=\"$tidb_cluster\", instance=~\"$instance\"}[30s])) by (le, instance))",
               "format": "time_series",
               "intervalFactor": 1,
@@ -1457,7 +1457,7 @@
               "refId": "D",
               "step": 10
             },
-			{
+			      {
               "expr": "histogram_quantile(1, sum(rate(go_sched_latencies_seconds_bucket{k8s_cluster=\"$k8s_cluster\",tidb_cluster=\"$tidb_cluster\", instance=~\"$instance\"}[30s])) by (le, instance))",
               "format": "time_series",
               "intervalFactor": 1,

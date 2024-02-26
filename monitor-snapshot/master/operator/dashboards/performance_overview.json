@@ -4798,7 +4798,6 @@
             "min": false,
             "rightSide": true,
             "show": true,
-            "sideWidth": 250,
             "sort": "avg",
             "sortDesc": true,
             "total": false,
