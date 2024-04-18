@@ -3,7 +3,7 @@ LINUX     := "linux"
 MAC       := "Darwin"
 
 TARGET_OS ?= $(shell go env GOOS)
-TARGET_ARCH ?= $(shell go env ARCH)
+TARGET_ARCH ?= $(shell go env GOARCH)
 
 export CGO_ENABLED = 0
 
