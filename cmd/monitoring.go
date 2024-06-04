@@ -2,25 +2,25 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/google/go-github/github"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
-	"github.com/youthlin/stream"
-	streamtypes "github.com/youthlin/stream/types"
 	"golang.org/x/oauth2"
-	"gopkg.in/yaml.v2"
 
+	"github.com/google/go-github/github"
 	"github.com/pingcap/monitoring/pkg/ansible"
 	"github.com/pingcap/monitoring/pkg/common"
 	"github.com/pingcap/monitoring/pkg/operator"
+	traceErr "github.com/pkg/errors"
+	"github.com/spf13/cobra"
+	"github.com/youthlin/stream"
+	streamtypes "github.com/youthlin/stream/types"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -77,10 +77,11 @@ func main() {
 		Run: func(co *cobra.Command, args []string) {
 			defer func() {
 				if err := recover(); err != nil {
-					traceE := errors.Wrap(err.(error), "")
-					log.Fatalf("%+v", traceE)
+					traceE := traceErr.Wrap(err.(error), "")
+					fmt.Printf("%+v", traceE)
+					os.RemoveAll(baseTagDir)
 				} else {
-					log.Println("Done.")
+					fmt.Println("Done.")
 				}
 			}()
 			common.CheckErr(stepUp(), "init env failed")
