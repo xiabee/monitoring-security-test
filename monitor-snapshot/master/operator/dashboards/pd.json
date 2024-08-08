@@ -852,7 +852,6 @@
           "interval": "",
           "intervalFactor": 2,
           "legendFormat": "",
-          "metric": "pd_server_tso",
           "refId": "A",
           "step": 40
         }
@@ -1208,7 +1207,6 @@
       },
       "yaxes": [
         {
-          "$$hashKey": "object:192",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -1217,7 +1215,6 @@
           "show": true
         },
         {
-          "$$hashKey": "object:193",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -1647,12 +1644,20 @@
           ],
           "targets": [
             {
-              "expr": "pd_cluster_placement_status{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}",
+              "expr": "sum(pd_cluster_placement_status{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}) by (name)",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 2,
               "legendFormat": "{{name}}",
               "refId": "A"
+            },
+            {
+              "expr": "pd_cluster_placement_status{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}",
+              "format": "time_series",
+              "hide": true,
+              "intervalFactor": 2,
+              "legendFormat": "{{name}}--{{store}}",
+              "refId": "B"
             }
           ],
           "timeFrom": "1s",
@@ -2088,7 +2093,7 @@
             {
               "format": "dtdurations",
               "label": null,
-              "logBase": 1,
+              "logBase": 2,
               "max": null,
               "min": "0",
               "show": true
@@ -2464,7 +2469,6 @@
               "interval": "",
               "intervalFactor": 2,
               "legendFormat": "{{kind}}",
-              "metric": "pd_scheduling_allowance_status",
               "refId": "A",
               "step": 2
             }
@@ -3137,7 +3141,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{event}}",
-              "metric": "pd_schedule_operators_count",
               "refId": "A",
               "step": 4
             }
@@ -4935,7 +4938,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{address}}-store-{{store}}",
-              "metric": "pd_hotspot_status",
               "refId": "A",
               "step": 4
             }
@@ -5144,7 +5146,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{address}}-store-{{store}}",
-              "metric": "pd_hotspot_status",
               "refId": "A",
               "step": 4
             },
@@ -5249,7 +5250,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{address}}-store-{{store}}",
-              "metric": "pd_hotspot_status",
               "refId": "A",
               "step": 4
             },
@@ -5871,6 +5871,21 @@
               "intervalFactor": 1,
               "legendFormat": "store-{{store}}-in",
               "refId": "B"
+            },
+            {
+              "expr": "- sum(delta(pd_scheduler_hot_region_direction{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\", store=~\"$store\",type=\"move-leader\",direction=\"out\",rw=\"write\"}[1m]))by (store)",
+              "format": "time_series",
+              "intervalFactor": 2,
+              "legendFormat": "store-{{store}}-out",
+              "refId": "C",
+              "step": 4
+            },
+            {
+              "expr": "sum(delta(pd_scheduler_hot_region_direction{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\", store=~\"$store\",type=\"move-leader\",direction=\"in\",rw=\"write\"}[1m]))by (store)",
+              "format": "time_series",
+              "intervalFactor": 1,
+              "legendFormat": "store-{{store}}-in",
+              "refId": "D"
             }
           ],
           "thresholds": [],
@@ -7067,7 +7082,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{kind}}",
-              "metric": "pd_scheduler_status",
               "refId": "A",
               "step": 2
             }
@@ -7371,7 +7385,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}",
-              "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
             },
@@ -7380,7 +7393,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "total",
-              "metric": "pd_scheduler_event_count",
               "refId": "B",
               "step": 4
             }
@@ -7477,7 +7489,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}",
-              "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
             },
@@ -7486,7 +7497,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "total",
-              "metric": "pd_scheduler_event_count",
               "refId": "B",
               "step": 4
             }
@@ -7583,7 +7593,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}",
-              "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
             }
@@ -7680,7 +7689,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}",
-              "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
             }
@@ -7776,7 +7784,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{source}}-{{target}}-{{type}}",
-              "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
             }
@@ -7884,7 +7891,7 @@
           "tableColumn": "",
           "targets": [
             {
-              "expr": "pd_checker_patrol_regions_time{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"} != 0",
+              "expr": "max(max(pd_checker_patrol_regions_time{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"})by(instance))",
               "legendFormat": "{{instance}}",
               "format": "time_series",
               "intervalFactor": 1,
@@ -8235,7 +8242,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{scope}}-store-{{source}}-{{type}}",
-              "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
             }
@@ -8331,7 +8337,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{scope}}-store-{{target}}-{{type}}",
-              "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
             },
@@ -9585,7 +9590,6 @@
               "expr": "histogram_quantile(0.99, sum(rate(etcd_network_peer_round_trip_time_seconds_bucket{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}[5m])) by (instance, To, le))",
               "intervalFactor": 2,
               "legendFormat": "{{instance}} - {{To}}",
-              "metric": "",
               "refId": "A",
               "step": 4
             }
@@ -9682,7 +9686,6 @@
               "expr": "histogram_quantile(0.99, sum(rate(etcd_disk_wal_fsync_duration_seconds_bucket{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}[5m])) by (instance, le))",
               "intervalFactor": 2,
               "legendFormat": "{{instance}}",
-              "metric": "",
               "refId": "A",
               "step": 4
             }
@@ -9924,7 +9927,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{instance}}",
-              "metric": "",
               "refId": "A",
               "step": 4
             }
@@ -10611,19 +10613,12 @@
               "step": 2
             },
             {
-              "expr": "histogram_quantile(0.99999, sum(rate(pd_server_handle_tso_duration_seconds_bucket{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}[30s])) by (type, le))",
-              "format": "time_series",
-              "intervalFactor": 1,
-              "legendFormat": "99.999% tso",
-              "refId": "D"
-            },
-            {
               "expr": "histogram_quantile(0.90, sum(rate(tso_server_handle_tso_duration_seconds_bucket{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}[30s])) by (type, le))",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 2,
               "legendFormat": "90% tso",
-              "refId": "E",
+              "refId": "D",
               "step": 2
             },
             {
@@ -10632,7 +10627,7 @@
               "hide": false,
               "intervalFactor": 2,
               "legendFormat": "99% tso",
-              "refId": "F",
+              "refId": "E",
               "step": 2
             },
             {
@@ -10641,22 +10636,15 @@
               "hide": false,
               "intervalFactor": 2,
               "legendFormat": "99.9% tso",
-              "refId": "G",
+              "refId": "F",
               "step": 2
-            },
-            {
-              "expr": "histogram_quantile(0.99999, sum(rate(tso_server_handle_tso_duration_seconds_bucket{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}[30s])) by (type, le))",
-              "format": "time_series",
-              "intervalFactor": 1,
-              "legendFormat": "99.999% tso",
-              "refId": "H"
             }
           ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "PD server TSO handle time",
+          "title": "PD server TSO handle duration",
           "tooltip": {
             "msResolution": false,
             "shared": true,
@@ -10743,18 +10731,34 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "histogram_quantile(0.98, sum(rate(pd_client_request_handle_requests_duration_seconds_bucket{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}[30s])) by (type, le))",
-              "hide": false,
+              "expr": "avg(rate(pd_client_request_handle_requests_duration_seconds_sum{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}[30s])) by (type) /  avg(rate(pd_client_request_handle_requests_duration_seconds_count{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}[30s])) by (type)",
               "intervalFactor": 2,
-              "legendFormat": "{{type}} 98th percentile",
+              "legendFormat": "avg {{type}}",
               "refId": "A",
               "step": 2
             },
             {
-              "expr": "avg(rate(pd_client_request_handle_requests_duration_seconds_sum{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}[30s])) by (type) /  avg(rate(pd_client_request_handle_requests_duration_seconds_count{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}[30s])) by (type)",
+              "expr": "histogram_quantile(0.90, sum(rate(pd_client_request_handle_requests_duration_seconds_bucket{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}[30s])) by (type, le))",
+              "hide": false,
               "intervalFactor": 2,
-              "legendFormat": "{{type}} average",
+              "legendFormat": "90% {{type}}",
               "refId": "B",
+              "step": 2
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum(rate(pd_client_request_handle_requests_duration_seconds_bucket{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}[30s])) by (type, le))",
+              "hide": false,
+              "intervalFactor": 2,
+              "legendFormat": "99% {{type}}",
+              "refId": "C",
+              "step": 2
+            },
+            {
+              "expr": "histogram_quantile(0.999, sum(rate(pd_client_request_handle_requests_duration_seconds_bucket{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}[30s])) by (type, le))",
+              "hide": false,
+              "intervalFactor": 2,
+              "legendFormat": "99.9% {{type}}",
+              "refId": "D",
               "step": 2
             }
           ],
@@ -10762,7 +10766,7 @@
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "Handle requests duration",
+          "title": "PD client requests handle duration",
           "tooltip": {
             "msResolution": false,
             "shared": true,
@@ -11147,10 +11151,15 @@
           "dashLength": 10,
           "dashes": false,
           "datasource": "tidb-cluster",
-          "description": "The region heartbeat handle duration in .99",
+          "description": "The region heartbeat handle duration by levels",
           "editable": true,
           "error": false,
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
           "fill": 0,
+          "fillGradient": 0,
           "grid": {},
           "gridPos": {
             "h": 8,
@@ -11158,7 +11167,8 @@
             "x": 12,
             "y": 23
           },
-          "id": 1302,
+          "hiddenSeries": false,
+          "id": 1610,
           "legend": {
             "alignAsTable": true,
             "avg": false,
@@ -11176,8 +11186,12 @@
           "linewidth": 1,
           "links": [],
           "nullPointMode": "null as zero",
+          "options": {
+            "alertThreshold": true
+          },
           "paceLength": 10,
           "percentage": false,
+          "pluginVersion": "7.5.17",
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
@@ -11187,20 +11201,46 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "histogram_quantile(0.99, sum(rate(pd_scheduler_handle_region_heartbeat_duration_seconds_bucket{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\", store=~\"$store\"}[1m])) by (address, store, le))",
+              "exemplar": true,
+              "expr": "histogram_quantile(0.99, sum(rate(pd_scheduler_handle_region_heartbeat_duration_seconds_bucket{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\", store=~\"$store\"}[1m])) by (le))",
               "format": "time_series",
               "hide": false,
+              "interval": "",
               "intervalFactor": 2,
-              "legendFormat": "{{address}}-store-{{store}}",
+              "legendFormat": "0.99",
               "refId": "A",
               "step": 4
+            },
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.9, sum(rate(pd_scheduler_handle_region_heartbeat_duration_seconds_bucket{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\", store=~\"$store\"}[1m])) by (le))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "0.9",
+              "refId": "B"
+            },
+            {
+              "exemplar": true,
+              "expr": "histogram_quantile(0.8, sum(rate(pd_scheduler_handle_region_heartbeat_duration_seconds_bucket{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\", store=~\"$store\"}[1m])) by (le))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "0.8",
+              "refId": "C"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum(rate(pd_scheduler_handle_region_heartbeat_duration_seconds_sum{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\", store=~\"$store\"}[1m])) / sum(rate(pd_scheduler_handle_region_heartbeat_duration_seconds_count{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\", store=~\"$store\"}[1m]))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "avg",
+              "refId": "D"
             }
           ],
           "thresholds": [],
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "99% Region heartbeat handle latency",
+          "title": "Region heartbeat handle latency overview",
           "tooltip": {
             "msResolution": false,
             "shared": true,
@@ -11358,15 +11398,14 @@
         },
         {
           "aliasColors": {},
-          "bars": true,
+          "bars": false,
           "dashLength": 10,
           "dashes": false,
           "datasource": "tidb-cluster",
-          "description": "The breakdown metric about heartbeat",
+          "description": "The region heartbeat handle duration in .99 by store",
           "editable": true,
           "error": false,
           "fill": 0,
-          "fillGradient": 0,
           "grid": {},
           "gridPos": {
             "h": 8,
@@ -11374,79 +11413,49 @@
             "x": 12,
             "y": 31
           },
-          "hiddenSeries": false,
-          "id": 1335,
+          "id": 1302,
           "legend": {
             "alignAsTable": true,
-            "avg": true,
+            "avg": false,
             "current": true,
             "hideEmpty": true,
-            "hideZero": true,
+            "hideZero": false,
             "max": true,
             "min": false,
             "rightSide": true,
             "show": true,
-            "sort": "current",
-            "sortDesc": true,
             "total": false,
             "values": true
           },
-          "lines": false,
+          "lines": true,
           "linewidth": 1,
           "links": [],
           "nullPointMode": "null as zero",
-          "options": {
-            "alertThreshold": true
-          },
           "paceLength": 10,
           "percentage": false,
-          "pluginVersion": "8.5.27",
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
-          "seriesOverrides": [
-            {
-              "$$hashKey": "object:1147",
-              "alias": "WaitRegionsLock",
-              "bars": false,
-              "lines": true,
-              "linewidth": 2,
-              "stack": false
-            },
-            {
-              "$$hashKey": "object:1251",
-              "alias": "WaitSubRegionsLock",
-              "bars": false,
-              "lines": true,
-              "linewidth": 2,
-              "stack": false
-            }
-          ],
+          "seriesOverrides": [],
           "spaceLength": 10,
-          "stack": true,
+          "stack": false,
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(rate(pd_core_region_heartbeat_breakdown_handle_duration_seconds_sum{k8s_cluster=\"$k8s_cluster\",tidb_cluster=~\"$tidb_cluster.*\"}[1m])) by (name)",
+              "expr": "histogram_quantile(0.99, sum(rate(pd_scheduler_handle_region_heartbeat_duration_seconds_bucket{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\", store=~\"$store\"}[1m])) by (address, store, le))",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 2,
-              "legendFormat": "{{name}}",
-              "range": true,
+              "legendFormat": "{{address}}-store-{{store}}",
               "refId": "A",
               "step": 4
-            },
-            {
-              "expr": "sum(rate(pd_core_acquire_regions_lock_wait_duration_seconds_sum{k8s_cluster=\"$k8s_cluster\",tidb_cluster=~\"$tidb_cluster.*\"}[1m])) by (type)",
-              "hide": false,
-              "legendFormat": "{{type}}",
-              "range": true,
-              "refId": "B"
             }
           ],
           "thresholds": [],
+          "timeFrom": null,
           "timeRegions": [],
-          "title": "Heartbeat Performance Duration BreakDown (Accumulation)",
+          "timeShift": null,
+          "title": "99% Region heartbeat handle latency by store",
           "tooltip": {
             "msResolution": false,
             "shared": true,
@@ -11455,27 +11464,33 @@
           },
           "type": "graph",
           "xaxis": {
+            "buckets": null,
             "mode": "time",
+            "name": null,
             "show": true,
             "values": []
           },
           "yaxes": [
             {
-              "$$hashKey": "object:322",
               "format": "s",
+              "label": null,
               "logBase": 1,
+              "max": null,
               "min": "0",
               "show": true
             },
             {
-              "$$hashKey": "object:323",
               "format": "s",
+              "label": null,
               "logBase": 1,
+              "max": null,
+              "min": null,
               "show": true
             }
           ],
           "yaxis": {
-            "align": false
+            "align": false,
+            "alignLevel": null
           }
         },
         {
@@ -11577,6 +11592,359 @@
         },
         {
           "aliasColors": {},
+          "bars": true,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "tidb-cluster",
+          "description": "The breakdown metric about heartbeat",
+          "editable": true,
+          "error": false,
+          "fill": 0,
+          "fillGradient": 0,
+          "grid": {},
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 39
+          },
+          "hiddenSeries": false,
+          "id": 1335,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
+            "hideEmpty": true,
+            "hideZero": true,
+            "max": true,
+            "min": false,
+            "rightSide": true,
+            "show": true,
+            "sort": "current",
+            "sortDesc": true,
+            "total": false,
+            "values": true
+          },
+          "lines": false,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null as zero",
+          "options": {
+            "alertThreshold": true
+          },
+          "paceLength": 10,
+          "percentage": false,
+          "pluginVersion": "8.5.27",
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [
+            {
+              "alias": "WaitRegionsLock",
+              "bars": false,
+              "lines": true,
+              "linewidth": 2,
+              "stack": false
+            },
+            {
+              "alias": "WaitSubRegionsLock",
+              "bars": false,
+              "lines": true,
+              "linewidth": 2,
+              "stack": false
+            }
+          ],
+          "spaceLength": 10,
+          "stack": true,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "sum(rate(pd_core_region_heartbeat_breakdown_handle_duration_seconds_sum{k8s_cluster=\"$k8s_cluster\",tidb_cluster=~\"$tidb_cluster.*\"}[1m])) by (name)",
+              "format": "time_series",
+              "hide": false,
+              "intervalFactor": 2,
+              "legendFormat": "{{name}}",
+              "range": true,
+              "refId": "A",
+              "step": 4
+            },
+            {
+              "expr": "sum(rate(pd_core_acquire_regions_lock_wait_duration_seconds_sum{k8s_cluster=\"$k8s_cluster\",tidb_cluster=~\"$tidb_cluster.*\"}[1m])) by (type)",
+              "hide": false,
+              "legendFormat": "{{type}}",
+              "range": true,
+              "refId": "B"
+            }
+          ],
+          "thresholds": [],
+          "timeRegions": [],
+          "title": "Heartbeat Performance Duration BreakDown (Accumulation)",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "mode": "time",
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "s",
+              "logBase": 1,
+              "min": "0",
+              "show": true
+            },
+            {
+              "format": "s",
+              "logBase": 1,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "tidb-cluster",
+          "description": "The count of the heartbeats which pending in the task queue.",
+          "editable": true,
+          "error": false,
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "fill": 0,
+          "fillGradient": 0,
+          "grid": {},
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 47
+          },
+          "hiddenSeries": false,
+          "id": 1609,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
+            "hideEmpty": true,
+            "hideZero": true,
+            "max": true,
+            "min": false,
+            "rightSide": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null as zero",
+          "options": {
+            "alertThreshold": true
+          },
+          "paceLength": 10,
+          "percentage": false,
+          "pluginVersion": "7.5.17",
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [
+            {
+              "alias": "/max-wait-duration.*/",
+              "bars": true,
+              "lines": false,
+              "transform": "negative-Y",
+              "yaxis": 2
+            }
+          ],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "pd_ratelimit_runner_pending_tasks{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}",
+              "format": "time_series",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "{{task_type}}_{{runner_name}}",
+              "refId": "A",
+              "step": 4
+            },
+            {
+              "exemplar": true,
+              "expr": "pd_ratelimit_runner_task_max_waiting_duration_seconds{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "max-wait-duration-{{runner_name}}",
+              "refId": "B"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Concurrent Runner Pending Task",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "decimals": null,
+              "format": "none",
+              "label": "",
+              "logBase": 1,
+              "max": null,
+              "min": "0",
+              "show": true
+            },
+            {
+              "format": "s",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "tidb-cluster",
+          "description": "The count of the heartbeats which faileds in the task queue.",
+          "editable": true,
+          "error": false,
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "fill": 0,
+          "fillGradient": 0,
+          "grid": {},
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 47
+          },
+          "hiddenSeries": false,
+          "id": 1608,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
+            "hideEmpty": true,
+            "hideZero": true,
+            "max": true,
+            "min": false,
+            "rightSide": true,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null as zero",
+          "options": {
+            "alertThreshold": true
+          },
+          "paceLength": 10,
+          "percentage": false,
+          "pluginVersion": "7.5.17",
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "rate(pd_ratelimit_runner_failed_tasks_total{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}[1m])*60",
+              "format": "time_series",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "failed-tasks-{{runner_name}}",
+              "refId": "A",
+              "step": 4
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Concurrent Runner Failed Task",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "opm",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": "0",
+              "show": true
+            },
+            {
+              "format": "s",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
           "bars": false,
           "dashLength": 10,
           "dashes": false,
@@ -11589,8 +11957,8 @@
           "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 12,
-            "y": 39
+            "x": 0,
+            "y": 55
           },
           "id": 1305,
           "legend": {
@@ -11683,8 +12051,8 @@
           "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 0,
-            "y": 47
+            "x": 12,
+            "y": 55
           },
           "id": 1306,
           "legend": {
@@ -11773,8 +12141,8 @@
           "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 12,
-            "y": 47
+            "x": 0,
+            "y": 63
           },
           "id": 1307,
           "legend": {
@@ -11866,8 +12234,8 @@
           "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 0,
-            "y": 55
+            "x": 12,
+            "y": 63
           },
           "id": 1308,
           "legend": {
@@ -11963,8 +12331,8 @@
           "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 12,
-            "y": 55
+            "x": 0,
+            "y": 71
           },
           "id": 1309,
           "legend": {
@@ -12060,8 +12428,8 @@
           "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 0,
-            "y": 63
+            "x": 12,
+            "y": 71
           },
           "id": 1310,
           "legend": {
@@ -12157,8 +12525,8 @@
           "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 12,
-            "y": 63
+            "x": 0,
+            "y": 79
           },
           "id": 1311,
           "legend": {
@@ -12254,8 +12622,8 @@
           "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 0,
-            "y": 71
+            "x": 12,
+            "y": 79
           },
           "id": 1312,
           "legend": {
