@@ -852,7 +852,6 @@
           "interval": "",
           "intervalFactor": 2,
           "legendFormat": "",
-          "metric": "pd_server_tso",
           "refId": "A",
           "step": 40
         }
@@ -1645,12 +1644,20 @@
           ],
           "targets": [
             {
-              "expr": "pd_cluster_placement_status{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}",
+              "expr": "sum(pd_cluster_placement_status{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}) by (name)",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 2,
               "legendFormat": "{{name}}",
               "refId": "A"
+            },
+            {
+              "expr": "pd_cluster_placement_status{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}",
+              "format": "time_series",
+              "hide": true,
+              "intervalFactor": 2,
+              "legendFormat": "{{name}}--{{store}}",
+              "refId": "B"
             }
           ],
           "timeFrom": "1s",
@@ -2462,7 +2469,6 @@
               "interval": "",
               "intervalFactor": 2,
               "legendFormat": "{{kind}}",
-              "metric": "pd_scheduling_allowance_status",
               "refId": "A",
               "step": 2
             }
@@ -3135,7 +3141,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{event}}",
-              "metric": "pd_schedule_operators_count",
               "refId": "A",
               "step": 4
             }
@@ -4933,7 +4938,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{address}}-store-{{store}}",
-              "metric": "pd_hotspot_status",
               "refId": "A",
               "step": 4
             }
@@ -5142,7 +5146,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{address}}-store-{{store}}",
-              "metric": "pd_hotspot_status",
               "refId": "A",
               "step": 4
             },
@@ -5247,7 +5250,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{address}}-store-{{store}}",
-              "metric": "pd_hotspot_status",
               "refId": "A",
               "step": 4
             },
@@ -7080,7 +7082,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{kind}}",
-              "metric": "pd_scheduler_status",
               "refId": "A",
               "step": 2
             }
@@ -7384,7 +7385,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}",
-              "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
             },
@@ -7393,7 +7393,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "total",
-              "metric": "pd_scheduler_event_count",
               "refId": "B",
               "step": 4
             }
@@ -7490,7 +7489,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}",
-              "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
             },
@@ -7499,7 +7497,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "total",
-              "metric": "pd_scheduler_event_count",
               "refId": "B",
               "step": 4
             }
@@ -7596,7 +7593,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}",
-              "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
             }
@@ -7693,7 +7689,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}",
-              "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
             }
@@ -7789,7 +7784,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{source}}-{{target}}-{{type}}",
-              "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
             }
@@ -8248,7 +8242,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{scope}}-store-{{source}}-{{type}}",
-              "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
             }
@@ -8344,7 +8337,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{scope}}-store-{{target}}-{{type}}",
-              "metric": "pd_scheduler_event_count",
               "refId": "A",
               "step": 4
             },
@@ -9598,7 +9590,6 @@
               "expr": "histogram_quantile(0.99, sum(rate(etcd_network_peer_round_trip_time_seconds_bucket{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}[5m])) by (instance, To, le))",
               "intervalFactor": 2,
               "legendFormat": "{{instance}} - {{To}}",
-              "metric": "",
               "refId": "A",
               "step": 4
             }
@@ -9695,7 +9686,6 @@
               "expr": "histogram_quantile(0.99, sum(rate(etcd_disk_wal_fsync_duration_seconds_bucket{k8s_cluster=\"$k8s_cluster\", tidb_cluster=\"$tidb_cluster\"}[5m])) by (instance, le))",
               "intervalFactor": 2,
               "legendFormat": "{{instance}}",
-              "metric": "",
               "refId": "A",
               "step": 4
             }
@@ -9937,7 +9927,6 @@
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{instance}}",
-              "metric": "",
               "refId": "A",
               "step": 4
             }
